@@ -1,0 +1,106 @@
+version: '3.7'
+
+volumes:
+  api-course__vm__node-modules:
+    driver: local
+  api-course__vm__mongo:
+    driver: local
+  api-course__vm__redis:
+    driver: local
+
+networks:
+  api-course__network__default:
+    driver: bridge
+
+services:
+  api:
+    build:
+      context: ./api
+      target: development
+    restart: always
+    container_name: api-course__server
+    working_dir: /usr/src/app
+    command: npm run start:dev
+    env_file:
+      - .env
+    environment:
+      MONGO_HOST: ${MONGO_HOST}
+      MONGO_PORT: ${MONGO_PORT}
+      MONGO_USER: ${MONGO_USERNAME}
+      MONGO_PASS: ${MONGO_PASSWORD}
+      MONGO_DB: ${MONGO_DATABASE}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+      - 9229:9229
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - ./api:/usr/src/app
+      - api-course__vm__node-modules:/usr/src/app/node_modules
+    networks:
+      - api-course__network__default
+  
+  redis:
+    image: redis:5.0
+    #    image: redis:5.0-alpine
+    restart: always
+    container_name: api-course__redis
+    command: --appendonly yes
+    volumes:
+      - api-course__vm__redis:/data
+    env_file:
+      - .env
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    networks:
+      - api-course__network__default
+  
+  mongo:
+    image: mongo
+    container_name: api-course__mongo
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    ports:
+      - ${MONGO_PORT}:${MONGO_PORT}
+    volumes:
+      - api-course__vm__mongo:/data/db
+    networks:
+      - api-course__network__default
+  
+  mongo-express:
+    image: mongo-express
+    container_name: api-course__mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    depends_on:
+      - mongo
+    env_file:
+      - .env
+    environment:
+      ME_CONFIG_MONGODB_PORT: ${MONGO_PORT}
+      ME_CONFIG_MONGODB_SERVER: ${MONGO_HOST}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+    networks:
+      - api-course__network__default
+  
+  bullboard:
+    image: deadly0/bull-board
+    container_name: api-course__bullboard
+    restart: always
+    ports:
+      - 3000:3000
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    networks:
+      - api-course__network__default

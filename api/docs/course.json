@@ -1,0 +1,21 @@
+{
+  "name": "Atendimento básico",
+  "description": "Curso de atendimento básico da niduu",
+  "tags": [
+    "a",
+    "b"
+  ],
+  "extra": "extra",
+  "units": [
+    {
+      "title": "Caixa",
+      "extra": "extra",
+      "lessons": [
+        {
+          "extra": "extra",
+          "title": "Guardando dinheiro no caixa"
+        }
+      ]
+    }
+  ]
+}
